@@ -1,0 +1,139 @@
+## 注解
+
+**优点**：编写简单
+
+**缺点**：解耦性略差
+
+### 常用注解
+
+@Select("sql语句")
+
+@Insert("sql语句")
+
+#### 获取自增后的主键
+
+```java
+	// 通过Options注解获取自增之后的主键。
+	@Options(useGeneratedKeys = true,keyProperty = "id",keyColumn = "id")
+    @Insert("INSERT INTO student VALUES (#{id},#{name},#{age})")
+    public abstract Integer insert(Student stu);
+```
+
+```java
+// 通过SelectKey注解获取自增主键
+@SelectKey(keyColumn = "id",
+        keyProperty = "id",
+        statement = "select last_insert_id()",
+        before = false,
+        resultType = int.class)
+@Insert("INSERT INTO student VALUES (#{id},#{name},#{age})")
+public abstract Integer insert(Student stu);
+```
+
+@Update("sql语句")
+
+@Delete("sql语句")
+
+### 多表注解配置
+
+#### 一对一
+
+> - @Results相当于xml中\<resultMap>，用于指定当前语句的结果集和JavaBean的映射关系。
+>   - @Result相当于xml中\<id>和\<result>。	
+>
+>     - @Result中的id属性，如果设置为true，代表当前列是主键列。
+>     - column属性用于指定结果集中的列名
+>     - property属性用于指定JavaBean中的属性名
+>
+>     *一对一的时候，@Result注解中的属性:*
+>
+>     - property：要封装的JavaBean中的属性名
+>       - javaType：要封装的JavaBean中的属性类型
+>       - column：结果集中一个列名。此列的值会传递到one注解的select属性指定的方法中。
+>       - one：
+>         - @One 注解用于指定结果中一对一的关系封装
+>           - select属性：用于指定另一个Mapper中的方法，通过调用该方法获取一个返回值，用于封装当前属性
+
+
+
+```java
+@Results({
+        @Result(column = "id",property = "id",id = true),
+        @Result(column = "number",property = "number"),
+        @Result(
+                property = "p",             // 被包含对象的变量名
+                javaType = Person.class,    // 被包含对象的实际数据类型
+                column = "pid",             // 根据查询出的card表中的pid字段来查询person表
+                /*
+                    one、@One 一对一固定写法
+                    select属性：指定调用哪个接口中的哪个方法
+                 */
+                one = @One(select = "com.itheima.one_to_one.PersonMapper.selectById")
+        )
+})
+```
+
+
+
+#### 一对多
+
+> - 一对多的时候，@Result注解中的属性
+>
+> - property：要封装的JavaBean中的属性名
+>   - javaType：要封装的JavaBean中的属性类型
+>   - column：结果集中一个列名。此列的值会传递到one注解的select属性指定的方法中。
+>   - many：
+>     - @Many注解用于指定结果中一对多的关系封装
+>       - select属性：用于指定另一个Mapper中的方法，通过调用该方法获取一个返回值（返回值是一个list集合），用于封装当前属性	
+
+```java
+@Results({
+        @Result(column = "id",property = "id",id = true),// id = true表示当前列是主键列
+        @Result(column = "name",property = "name"),
+        @Result(
+                property = "students",  // 被包含对象的变量名
+                javaType = List.class,  // 被包含对象的实际数据类型
+                column = "id",          // 根据查询出的classes表的id字段来查询student表
+                /*
+                    many、@Many 一对多查询的固定写法
+                    select属性：指定调用哪个接口中的哪个查询方法
+                 */
+                many = @Many(select = "com.itheima.one_to_many.StudentMapper.selectByCid")
+        )
+})
+```
+
+### 构建sql
+
+#### 方法一
+
+要在带注解的映射器接口类中使用动态 SQL，可以使用 *script* 元素。比如:
+
+直接在script标签中，编写之前映射配置文件中的动态sql的标签。
+
+```xml
+@Update({"<script>",
+      "update Author",
+      "  <set>",
+      "    <if test='username != null'>username=#{username},</if>",
+      "    <if test='password != null'>password=#{password},</if>",
+      "    <if test='email != null'>email=#{email},</if>",
+      "    <if test='bio != null'>bio=#{bio}</if>",
+      "  </set>",
+      "where id=#{id}",
+      "</script>"})
+    void updateAuthorValues(Author author);
+```
+
+#### 方法二
+
+```java
+@SelectProvider(type = ReturnSql.class , method = "getSelectAll")
+// 使用SelectProvider注解，可以把指定类中的指定方法的返回值（类型是字符串）当作一个sql语句执行。
+@InsertProvider
+@UpdateProvider
+@DeleteProvider
+```
+
+使用Provider系列的注解，可以让我们通过调用一个方法获取sql语句。给我们编写代码提供了更灵活的空间，可以配合if  for语句，完成动态sql的生成。
+
