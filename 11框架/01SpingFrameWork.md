@@ -31,7 +31,9 @@
 
 
 
-### Bean
+### Bean	`(IOC)`
+
+![image-20211113160319647](img/image-20211113160319647.png)
 
 #### 基础配置
 
@@ -86,7 +88,7 @@
 ```xml
 <bean id="工厂类id" class="工厂类全类名"/>
 
-<bean id="目标类id" factory-method="工厂类创建目标对象方法名" factory-bean="工厂类id"/>
+<bean id="目标类id" factory-bean="工厂类id" factory-method="工厂类创建目标对象方法名"/>
 ```
 
 ##### -实现FactoryBean\<T\>接口
@@ -110,6 +112,100 @@ public class DemoFactoryBean implements FactoryBean<DemoDao> {
 > 策略设计模式
 >
 > 当工厂模式实现了`FactoryBean`时，Spring会自动识别
+
+
+
+
+
+---
+
+---
+
+---
+
+---
+
+#### 创建IOC容器
+
+- 方式一：类路径加载配置文件
+
+```java
+ApplicationContext ctx = new ClassPathXmlApplicationContext("applicationContext.xml");
+```
+
+- 方式二：文件路径加载配置文件
+
+```java
+ApplicationContext ctx = new FileSystemXmlApplicationContext("D:\\applicationContext.xml");
+```
+
+- 加载多个配置文件
+
+```java
+ApplicationContext ctx = new ClassPathXmlApplicationContext("bean1.xml", "bean2.xml");
+```
+
+
+
+#### 获取bean对象
+
+- 方式一：使用bean名称获取
+
+> 需要自己强制类型转换
+
+```java
+BookDao bookDao = (BookDao) ctx.getBean("bookDao");
+```
+
+- **方式二：使用bean名称获取并指定类型**
+
+> 推荐使用
+
+```java
+BookDao bookDao = ctx.getBean("bookDao", BookDao.class);
+```
+
+- 方式三：使用bean类型获取
+
+> 如果IOC容器中同类型的Bean对象有多个，此处获取会报错
+
+```java
+BookDao bookDao = ctx.getBean(BookDao.class);
+```
+
+
+
+#### BeanFactory
+
+- 类路径加载配置文件
+
+```java
+Resource resources = new ClassPathResource("applicationContext.xml");
+BeanFactory bf = new XmlBeanFactory(resources);
+BookDao bookDao = bf.getBean("bookDao", BookDao.class);
+bookDao.save();
+```
+
+- BeanFactory创建完毕后，所有的Bean均为延迟加载，也就是说调用getBean()方法获取Bean对象时才创建Bean对象并返回
+
+
+
+> - BeanFactory是IoC容器的顶层接口，初始化BeanFactory对象时，加载的bean延迟加载
+> - ApplicationContext接口是Spring容器的核心接口，初始化时bean立即加载
+> - ApplicationContext接口提供基础的bean操作相关方法，通过其他接口扩展其功能
+> - ApplicationContext接口常用初始化类
+>   - **ClassPathXmlApplicationContext(常用)**
+>   - FileSystemXmlApplicationContext
+
+---
+
+---
+
+---
+
+---
+
+
 
 
 
@@ -173,7 +269,9 @@ public class AppForLifeCycle {
 
 
 
-### 依赖注入的两种方式
+### 依赖注入
+
+![image-20211113160336674](img/image-20211113160336674.png)
 
 - setter注入
   - 简单类型
@@ -212,7 +310,7 @@ public class AppForLifeCycle {
 <bean id="唯一id" class="全类名"/>
 
 <bean id="唯一id" class="全类名">
-	<constructor-arg name="构造形参名称" ref="引用类型（id）" 
+	<constructor-arg name="构造形参名称" ref="引用类型（id）"/>
 </bean>
 ```
 
@@ -220,7 +318,7 @@ public class AppForLifeCycle {
 
 ```xml
 <bean id="唯一id" class="全类名">
-	<constructor-arg name="构造形参名称" value="值" 
+	<constructor-arg name="构造形参名称" value="值"/
 </bean>
 ```
 
@@ -328,3 +426,55 @@ public class AppForLifeCycle {
 ```
 
 > 说明：property标签表示setter方式注入，构造方式注入constructor-arg标签内部也可以写\<array>、\<list>、\<set>、\<map>、\<props>标签
+
+
+
+### 引入外部properties文件
+
+1. 在xml中开启context命名空间
+
+2. 引入文件方法如下：
+
+```xml
+<context:property-placeholder location="jdbc.properties">
+```
+
+3. 获取属性使用EL表达式，例(druid连接池数据源配置)：
+
+```xml
+<bean class="com.alibaba.druid.pool.DruidDataSource">
+    <property name="driverClassName" value="${jdbc.driver}"/>
+    <property name="url" value="${jdbc.url}"/>
+    <property name="username" value="${jdbc.username}"/>
+    <property name="password" value="${jdbc.password}"/>
+</bean>
+```
+
+**注意：**
+
+​	当读取的属性恰好在系统中也有此系统属性时，系统属性的优先权大于项目配置文件属性，所以可能出现读不到正确的值，解决办法有两种
+
+其一：如上配置所示，加前缀，避免与系统属性命名冲突
+
+其二：在`context`标签中加入属性`system-properties-mode="NEVER"`不允许使用系统属性
+
+> 需要加载多个配置文件时，使用逗号分割配置文件，在项目中`property-placeholder`只允许存在一个，存在多个时会产生冲突或覆盖
+>
+> ```xml
+> <context:property-placeholder location="jdbc.properties,msg.properties"/>
+> ```
+>
+> 可以使用通配符加载全部配置文件
+>
+> ```xml
+> <context:property-placeholder location="*.properties"/>
+> ```
+>
+> **标准格式**
+>
+> ```xml
+> <context:property-placeholder location="classpath:*.properties"/>
+> ```
+
+
+
