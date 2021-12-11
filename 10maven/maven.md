@@ -227,6 +227,13 @@ path中添加：`%MAVEN_HOME%\bin`
 
 > `tomcat7`版本get传参如果传中文会乱码。
 >
+> ```xml
+> <!--插件配置加入以下配置-->
+> <uriEncoding>UTF-8</uriEncoding>
+> ```
+>
+> 或
+>
 > ```java
 > // 解决方案。把乱码字符串通过iso的编码还原为二进制，然后用u8重新解析。
 > name = new String(request.getParameter("name").getBytes("ISO-8859-1"),"utf-8");

@@ -367,7 +367,13 @@ axios.post('/user', {// post无需通过params指定，直接json封装参数即
 
 
 
+## 补充
 
+如果将表单双向绑定到数据，在编辑表单的时候，数据也会发生变化，如果一组数据绑定了多个表单，例如同时绑定了展示数据与Dialog编辑数据表单，在修改dialog表单时，页面表单数据也会发生变化，所以可以使用以下方法解决：
+
+```js
+this.editFormData = JSON.parse(JSON.stringify(row));
+```
 
 
 

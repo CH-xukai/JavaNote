@@ -231,7 +231,7 @@ public Object around(ProceedingJoinPoint pjp) throws Throwable {
 }
 ```
 
-#### 2.3 获取异常
+#### 获取异常
 
 > 说明：在抛出异常后通知和环绕通知中都可以获取到连接点方法中出现的异常
 
